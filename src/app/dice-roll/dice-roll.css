@@ -14,6 +14,15 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
+.join-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
 .rounds-input {
   display: flex;
   justify-content: center;
