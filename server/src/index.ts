@@ -3,6 +3,8 @@ import http from 'http';
 import { Server, Socket } from 'socket.io';
 import { Worker } from 'worker_threads';
 import path from 'path';
+import dotenv from 'dotenv';
+dotenv.config(); 
 
 const app = express();
 const server = http.createServer(app);
@@ -30,8 +32,21 @@ let currentRound: number = 0;
 let scores: { [id: string]: number } = {};
 
 function rollDiceInWorker(): Promise<number> {
+  const isDev = process.env.NODE_ENV !== 'production';
   return new Promise((resolve, reject) => {
-    const worker = new Worker(path.resolve(__dirname, 'dice-worker.js'));
+    let worker: Worker;
+    if (isDev) {
+      // Use ts-node to run the TS worker directly
+      const tsNodePath = require.resolve('ts-node/dist/bin.js');
+      const workerScript = path.resolve(__dirname, 'dice-worker.ts');
+      worker = new Worker(tsNodePath, {
+        argv: [workerScript],
+      });
+    } else {
+      // Use built JS file
+      const workerPath = path.resolve(__dirname, 'dice-worker.js');
+      worker = new Worker(workerPath);
+    }
     worker.on('message', (roll) => resolve(roll));
     worker.on('error', reject);
     worker.postMessage('roll');
@@ -191,11 +206,6 @@ io.on('connection', (socket: Socket) => {
 });
 
 app.use(express.static('public'));
-
-// Fallback: serve index.html for all unknown routes (SPA support)
-app.get('*', (_req, res) => {
-  res.sendFile(require('path').join(__dirname, '../public/index.html'));
-});
 
 app.get('/', (_req, res) => {
   res.send('Dice Roller Game Server is running!');
