@@ -1,59 +1,170 @@
-# DiceRoll
+# Multiplayer Dice Roller Game
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.3.
+## Quick Start
 
-## Development server
+### Prerequisites
+- **Node.js 20+** (required for worker threads and modern Angular)
+- **npm**
 
-To start a local development server, run:
-
+### 1. Start the Backend Server
 ```bash
-ng serve
+cd server
+npm install        # Only needed once
+npm run dev        # Starts the backend on http://localhost:3000
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### 2. Start the Angular Frontend
+- If you have the Angular CLI installed globally:
+  ```bash
+  cd ..              # From /server back to project root
+  npm install        # Only needed once (in project root)
+  ng serve           # Starts the frontend on http://localhost:4200
+  ```
+- If you do **not** have Angular CLI globally, use:
+  ```bash
+  npm start          # Uses the local Angular CLI to start the frontend
+  # The app will be available at http://localhost:4200
+  ```
 
-## Code scaffolding
+- Open multiple browser tabs/windows at http://localhost:4200 to simulate multiple players.
+- The backend and frontend must both be running for the game to work.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+---
 
-```bash
-ng generate component component-name
-```
+## Overview
+This project is a real-time, multiplayer dice roller game built with an Angular frontend and a Node.js (Express + Socket.io) backend. Players join a lobby, and in each round, take turns rolling a dice. The game supports multiple rounds, automatic turn management, and fair scoring, with a gamified UI and robust handling of player connections.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
+## Features
+- **Real-time Multiplayer:** Multiple players can join and play together in real time.
+- **Turn-based Rolling:** Only the current player can roll; others must wait for their turn.
+- **Automatic Turn Timer:** Each player has 10 seconds to roll; if they don't, the server rolls for them.
+- **Multiple Rounds:** The host sets the number of rounds; scores are accumulated across rounds.
+- **Fair Scoring:** If a player disconnects before rolling, they get a score of 0 for that round; if they already rolled, their score is kept.
+- **Unique Player Names:** Duplicate names are automatically suffixed with a number.
+- **Host Controls:** Only the first player (host) can start a new game.
+- **Responsive, Gamified UI:** Modern, accessible, and visually engaging interface.
+- **Robust Connection Handling:** Handles mid-game joins, disconnects, and reconnections gracefully.
 
-## Building
+---
 
-To build the project run:
+## Architecture
 
-```bash
-ng build
-```
+### Backend (Node.js + Express + Socket.io)
+- **Express** serves as the HTTP server (for health checks, not for serving the frontend).
+- **Socket.io** manages real-time, bidirectional communication between server and clients.
+- **Worker Threads** are used for dice rolling to demonstrate parallelism, though the computation is lightweight.
+- **Game State:**
+  - `players`: Array of connected players (id, name, roll).
+  - `pendingPlayers`: Players who join mid-round, queued for the next round.
+  - `scores`: Cumulative scores for each player.
+  - `currentTurnIndex`, `currentRound`, `totalRounds`: Track game progress.
+- **Turn Management:**
+  - Only the player at `currentTurnIndex` can roll.
+  - If a player disconnects before rolling, their roll is set to 0.
+  - After all players roll, the server either starts the next round or ends the game.
+- **Events:**
+  - `join`: Player joins the game (with unique name logic).
+  - `startRound`: Host starts a new game or round (with round count).
+  - `roll`: Player requests to roll the dice (validated by turn).
+  - `turn`: Server notifies clients whose turn it is.
+  - `roundStart`, `roundEnd`: Server notifies clients of round/game state.
+  - `players`: Updates the player list for all clients.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Frontend (Angular)
+- **Component-based UI:** All logic is in a single, focused component (`dice-roll`).
+- **Modern Angular Syntax:** Uses `@if` and `@for` blocks for control flow, and best practices for state and template management.
+- **Socket.io-client:** Handles all real-time communication with the backend.
+- **State Management:**
+  - Tracks players, rolls, scores, current turn, round, and UI state (e.g., timers, error messages).
+  - Only the host can start a new game; others see a waiting message.
+- **User Experience:**
+  - Clear indication of whose turn it is, with a countdown timer.
+  - Gamified dice visuals and responsive layout.
+  - Final scores and winner(s) shown at the end of all rounds.
+  - Handles duplicate names, mid-game joins, and disconnects gracefully.
 
-## Running unit tests
+---
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Implementation Details
 
-```bash
-ng test
-```
+### Server Logic
+- **Player Join:**
+  - If a player joins mid-round, they're added to `pendingPlayers` and join the next round.
+  - Names are made unique by appending a number if needed (e.g., Alice, Alice 1).
+- **Turn Sequence:**
+  - The server emits a `turn` event to all clients, indicating whose turn it is.
+  - Only the current player can roll; others' roll buttons are disabled.
+  - If the timer expires, the server auto-rolls for the player.
+- **Round and Game Flow:**
+  - The host sets the number of rounds before starting.
+  - After each round, scores are updated and the next round starts automatically (with a short pause).
+  - After the last round, final scores and winners are broadcast.
+- **Disconnections:**
+  - If a player disconnects before rolling, their roll is set to 0.
+  - If they disconnect after rolling, their score is kept.
+  - The turn order and round flow are adjusted as needed.
+- **Worker Thread:**
+  - Dice rolling is performed in a worker thread for demonstration, though not strictly necessary for performance.
 
-## Running end-to-end tests
+### Frontend Logic
+- **Joining and Naming:**
+  - Players enter a name; if it's taken, a number is appended.
+  - If joining mid-round, a message is shown and the player waits for the next round.
+- **Game Controls:**
+  - Only the host (first player) can start a new game.
+  - The number of rounds can be set before starting.
+  - The UI disables the start button while editing rounds or during transitions.
+- **Turn and Timer:**
+  - The UI shows whose turn it is and a countdown timer.
+  - Only the current player can roll; others see a waiting message.
+- **Scoring and Results:**
+  - After each round, scores are updated.
+  - After the final round, a summary of all scores and the winner(s) is shown.
+- **Design:**
+  - Responsive, accessible, and visually engaging.
+  - Special styling for round input and round transitions.
 
-For end-to-end (e2e) testing, run:
+---
 
-```bash
-ng e2e
-```
+## How to Run
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### Prerequisites
+- Node.js (v20+ required)
+- npm
 
-## Additional Resources
+### Setup
+1. **Install dependencies:**
+   - In `/server`: `npm install`
+   - In project root: `npm install` (for Angular frontend)
+2. **Start the backend:**
+   - `cd server && npm run dev`
+3. **Start the frontend:**
+   - If you have Angular CLI: `ng serve`
+   - If not: `npm start`
+4. **Open the app:**
+   - Visit `http://localhost:4200` in multiple browser windows/tabs to simulate multiple players.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+---
+
+## Presenting the Project
+- **Architecture:** Explain the separation of concerns between backend (game logic, real-time events) and frontend (UI, state, user interaction).
+- **Game Flow:** Demonstrate joining, starting a game, turn-based rolling, timer, and scoring.
+- **Robustness:** Show how the app handles disconnects, duplicate names, and mid-game joins.
+- **Extensibility:** The codebase is ready for enhancements (e.g., chat, avatars, more game types) and follows best practices for maintainability.
+
+---
+
+## Further Improvements (Ideas)
+- Add chat or emoji reactions.
+- Add player avatars or profile pictures.
+- Add sound effects or dice roll animations.
+- Support for mobile devices and touch controls.
+- Persistent leaderboards or player stats.
+- Admin/host transfer if the first player leaves.
+
+---
+
+## License
+MIT
