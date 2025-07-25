@@ -1,0 +1,60 @@
+<div class="dice-game-container">
+  <h1>🎲 Multiplayer Dice Roller 🎲</h1>
+
+  <div *ngIf="!joined" class="join-section">
+    <input [(ngModel)]="myName" placeholder="Enter your name" />
+    <button (click)="joinGame()">Join Game</button>
+  </div>
+
+  <div *ngIf="joined" class="game-section">
+    <div *ngIf="joinError" class="error-message">{{ joinError }}</div>
+    <div class="players-list">
+      <h2>Players</h2>
+      <ul>
+        <li *ngFor="let player of players">
+          <span [ngClass]="{'me': player.id === myId}">{{ player.name }} <span *ngIf="player.id === myId">(You)</span></span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="actions">
+      <button (click)="startRound()" [disabled]="roundActive || !isFirstPlayer()">Start New Round</button>
+      <button (click)="rollDice()" [disabled]="!canRoll()">Roll Dice</button>
+    </div>
+
+    <div *ngIf="roundActive" class="turn-section">
+      <h3 *ngIf="currentTurnId === myId">Your turn! Roll now <span *ngIf="turnCountdown">({{ turnCountdown }})</span></h3>
+      <h3 *ngIf="currentTurnId !== myId">Waiting for {{ getCurrentTurnName() }} to roll... <span *ngIf="turnCountdown">({{ turnCountdown }})</span></h3>
+    </div>
+
+    <div *ngIf="roundActive" class="rolling-section">
+      <h3>Rolling... Waiting for all players!</h3>
+      <div class="dice-list">
+        <div *ngFor="let player of players" class="dice-player">
+          <span>{{ player.name }}</span>
+          <div class="dice" [ngClass]="{'me': player.id === myId}">
+            <span *ngIf="hasRolled(player.id)">
+              {{ getRoll(player.id) }}
+            </span>
+            <span *ngIf="!hasRolled(player.id)">?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!roundActive && winners.length" class="results-section">
+      <h2>🏆 Winner{{ winners.length > 1 ? 's' : '' }}: {{ getWinnerNames() }} 🏆</h2>
+      <div class="dice-list">
+        <div *ngFor="let player of rolls" class="dice-player">
+          <span>{{ player.name }}</span>
+          <div class="dice" [ngClass]="{'me': player.id === myId, 'winner': isWinner(player.id)}">
+            {{ player.roll }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="!roundActive && players.length > 1 && !isFirstPlayer()" class="waiting-message">
+      Waiting for <b>{{ players[0]?.name }}</b> to start the game...
+    </div>
+  </div>
+</div>
