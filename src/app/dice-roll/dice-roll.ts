@@ -33,6 +33,12 @@ export class DiceRoll {
   joinError: string = '';
 
   constructor() {
+    // Author Console Log
+    console.log('Created By: John Paul S. Alabe');
+    console.log('Course: MIT');
+    console.log('Contact: alabejohnpaul@gmail.com');
+    console.log('Date: July 25, 2025');
+    console.log('Subject: MITC701 - Advance OS and Network');
     this.socket = io('http://localhost:3000');
     this.registerSocketEvents();
   }
