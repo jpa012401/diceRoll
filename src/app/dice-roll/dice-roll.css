@@ -14,7 +14,44 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
-.join-section, .actions {
+.rounds-input {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2rem 0 1.5rem 0;
+}
+.rounds-input label {
+  font-size: 1.3rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.rounds-input input[type="number"] {
+  font-size: 1.3rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  width: 80px;
+  text-align: center;
+  margin-left: 0.5rem;
+}
+
+.starting-round-text {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ffd803;
+  margin: 1.5rem 0 1.5rem 0;
+  letter-spacing: 1px;
+  background: rgba(255, 219, 3, 0.08);
+  border-radius: 10px;
+  padding: 1rem 0.5rem;
+  box-shadow: 0 2px 8px rgba(255,216,3,0.08);
+  white-space: pre-wrap;
+}
+
+.actions {
   display: flex;
   justify-content: center;
   gap: 1rem;

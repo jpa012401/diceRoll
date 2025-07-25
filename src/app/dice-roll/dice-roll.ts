@@ -31,6 +31,12 @@ export class DiceRoll {
   turnTimer: any;
   turnCountdown: number = 0;
   joinError: string = '';
+  totalRounds: number = 1;
+  currentRound: number = 0;
+  scores: { [id: string]: number } = {};
+  isStartingRound: boolean = false;
+  roundsInputFocused: boolean = false;
+  startingRoundText: string = '';
 
   constructor() {
     // Author Console Log
@@ -51,11 +57,18 @@ export class DiceRoll {
     this.socket.on('players', (players: Player[]) => {
       this.players = players;
     });
-    this.socket.on('roundStart', () => {
+    this.socket.on('roundStart', (data?: { currentRound?: number, totalRounds?: number }) => {
       this.roundActive = true;
       this.myRoll = undefined;
       this.winners = [];
       this.rolls = [];
+      this.isStartingRound = false;
+      // this.startingRoundText = data && data.currentRound ? `Starting round ${data.currentRound}...` : '';
+      if (data) {
+        this.currentRound = data.currentRound || 1;
+        this.totalRounds = data.totalRounds || 1;
+      }
+      setTimeout(() => { this.startingRoundText = ''; }, 500);
     });
     this.socket.on('rolls', (rolls: Player[]) => {
       this.rolls = rolls;
@@ -72,13 +85,21 @@ export class DiceRoll {
         }
       }, 1000);
     });
-    this.socket.on('roundEnd', (data: { winners: Player[], rolls: Player[] }) => {
-      this.roundActive = false;
-      this.winners = data.winners;
-      this.rolls = data.rolls;
-      this.currentTurnId = '';
-      this.turnCountdown = 0;
+    this.socket.on('roundEnd', (data: { winners: Player[], rolls: Player[], scores?: { [id: string]: number }, currentRound?: number, totalRounds?: number }) => {
+      if (this.currentRound === this.totalRounds) {
+        this.roundActive = false;
+        this.winners = data.winners;
+        this.rolls = data.rolls;
+        this.currentTurnId = '';
+        this.turnCountdown = 0;
+      }else{
+        this.startingRoundText = `End of round ${this.currentRound}...\nStarting round ${this.currentRound + 1}...`;
+      }
+      
       if (this.turnTimer) clearInterval(this.turnTimer);
+      if (data.scores) this.scores = data.scores;
+      if (data.currentRound) this.currentRound = data.currentRound;
+      if (data.totalRounds) this.totalRounds = data.totalRounds;
     });
     this.socket.on('joinError', (msg: string) => {
       this.joinError = msg;
@@ -94,7 +115,9 @@ export class DiceRoll {
   }
 
   startRound() {
-    this.socket.emit('startRound');
+    this.isStartingRound = true;
+    // this.startingRoundText = `Starting round 1...`;
+    this.socket.emit('startRound', { totalRounds: this.totalRounds });
   }
 
   rollDice() {
@@ -129,5 +152,15 @@ export class DiceRoll {
 
   isFirstPlayer(): boolean {
     return this.players.length > 0 && this.players[0].id === this.myId;
+  }
+
+  getFinalWinners(): Player[] {
+    if (!this.scores || Object.keys(this.scores).length === 0) return [];
+    const maxScore = Math.max(...Object.values(this.scores));
+    return this.players.filter(p => this.scores[p.id] === maxScore);
+  }
+
+  getFinalWinnerNames(): string {
+    return this.getFinalWinners().map(w => w.name).join(', ');
   }
 }

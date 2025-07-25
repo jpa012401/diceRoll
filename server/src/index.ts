@@ -25,6 +25,9 @@ let pendingPlayers: Player[] = [];
 let roundActive = false;
 let currentTurnIndex: number = 0;
 let turnTimer: NodeJS.Timeout | null = null;
+let totalRounds: number = 1;
+let currentRound: number = 0;
+let scores: { [id: string]: number } = {};
 
 function rollDiceInWorker(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -35,19 +38,39 @@ function rollDiceInWorker(): Promise<number> {
   });
 }
 
+function resetScores() {
+  scores = {};
+  players.forEach(p => { scores[p.id] = 0; });
+}
+
 function startTurn() {
   if (!roundActive || players.length === 0) return;
   if (currentTurnIndex >= players.length) {
     // All players rolled, end round
     roundActive = false;
+    // Update scores
+    players.forEach(p => {
+      if (p.roll !== undefined) scores[p.id] = (scores[p.id] || 0) + p.roll!;
+    });
     const maxRoll = Math.max(...players.map(p => p.roll || 0));
     const winners = players.filter(p => p.roll === maxRoll);
-    io.emit('roundEnd', { winners, rolls: players });
+    io.emit('roundEnd', { winners, rolls: players, scores, currentRound, totalRounds });
     // Add pending players for next round
     if (pendingPlayers.length > 0) {
       players = players.concat(pendingPlayers.map(p => ({ ...p, roll: undefined })));
       pendingPlayers = [];
       io.emit('players', players);
+    }
+    // Start next round if not finished
+    if (currentRound < totalRounds) {
+      setTimeout(() => {
+        currentRound++;
+        players = players.map(p => ({ ...p, roll: undefined }));
+        roundActive = true;
+        currentTurnIndex = 0;
+        io.emit('roundStart', { currentRound, totalRounds });
+        startTurn();
+      }, 2000); // 2s pause between rounds
     }
     return;
   }
@@ -117,15 +140,25 @@ io.on('connection', (socket: Socket) => {
     startTurn();
   });
 
-  socket.on('startRound', async () => {
+  socket.on('startRound', async (data?: { totalRounds?: number }) => {
     if (players.length === 0 || players[0].id !== socket.id) {
       // Only the first player can start a new round
       return;
     }
+    if (data && data.totalRounds) {
+      totalRounds = data.totalRounds;
+      currentRound = 1;
+      resetScores();
+    } else if (currentRound === 0) {
+      currentRound = 1;
+      resetScores();
+    } else {
+      currentRound++;
+    }
     players = players.map(p => ({ ...p, roll: undefined }));
     roundActive = true;
     currentTurnIndex = 0;
-    io.emit('roundStart');
+    io.emit('roundStart', { currentRound, totalRounds });
     startTurn();
   });
 
