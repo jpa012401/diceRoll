@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
+import { environment } from '../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -45,8 +46,7 @@ export class DiceRoll {
     console.log('Contact: alabejohnpaul@gmail.com');
     console.log('Date: July 25, 2025');
     console.log('Subject: MITC701 - Advance OS and Network');
-    const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    const socketUrl = isProd ? undefined : 'http://localhost:3000';
+    const socketUrl = environment.socketUrl || undefined;
     this.socket = io(socketUrl);
     this.registerSocketEvents();
   }
