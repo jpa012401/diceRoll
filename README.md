@@ -15,13 +15,13 @@ npm run dev        # Starts the backend on http://localhost:3000
 
 ### 2. Start the Angular Frontend
 - If you have the Angular CLI installed globally:
-  ```bash
+```bash
   cd ..              # From /server back to project root
   npm install        # Only needed once (in project root)
   ng serve           # Starts the frontend on http://localhost:4200
-  ```
+```
 - If you do **not** have Angular CLI globally, use:
-  ```bash
+```bash
   npm start          # Uses the local Angular CLI to start the frontend
   # The app will be available at http://localhost:4200
   ```
