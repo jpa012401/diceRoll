@@ -54,7 +54,7 @@
       </div>
     </div>
     <div *ngIf="!roundActive && players.length > 1 && !isFirstPlayer()" class="waiting-message">
-      Waiting for <b>{{ players[0]?.name }}</b> to start the game...
+      Waiting for <b>{{ players[0].name || 'Unknown' }}</b> to start the game...
     </div>
   </div>
 </div>
