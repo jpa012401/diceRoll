@@ -45,7 +45,9 @@ export class DiceRoll {
     console.log('Contact: alabejohnpaul@gmail.com');
     console.log('Date: July 25, 2025');
     console.log('Subject: MITC701 - Advance OS and Network');
-    this.socket = io('http://localhost:3000');
+    const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const socketUrl = isProd ? undefined : 'http://localhost:3000';
+    this.socket = io(socketUrl);
     this.registerSocketEvents();
   }
 

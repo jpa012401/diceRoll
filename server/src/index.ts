@@ -190,6 +190,13 @@ io.on('connection', (socket: Socket) => {
   });
 });
 
+app.use(express.static('public'));
+
+// Fallback: serve index.html for all unknown routes (SPA support)
+app.get('*', (_req, res) => {
+  res.sendFile(require('path').join(__dirname, '../public/index.html'));
+});
+
 app.get('/', (_req, res) => {
   res.send('Dice Roller Game Server is running!');
 });
