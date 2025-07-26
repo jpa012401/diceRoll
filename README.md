@@ -1,7 +1,7 @@
 # Multiplayer Dice Roller Game
 
 ## Demo Video
-Watch the game in action: [Demo Video](./demo/demo-video.mp4)
+Watch the game in action: [Demo Video](./demo/demo.mp4)
 
 <!-- 
 If you have a video file in the /demo folder, you can reference it like:
